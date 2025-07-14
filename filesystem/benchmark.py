@@ -1,7 +1,7 @@
-# filesystem/benchmark.py
 import time
 import matplotlib.pyplot as plt
-from filesystem.inode import Inode
+from filesystem.commands import file_ops
+from filesystem.commands import dir_ops
 
 def medir_tempo(func, *args):
     inicio = time.perf_counter()
@@ -13,37 +13,45 @@ def benchmark(shell):
     resultados = {
         'create': [],
         'write': [],
+        'mv': [],
         'read': [],
         'delete': []
     }
 
-    from filesystem.commands import file_ops
+    # Criar diretório de destino para mv
+    if "destino" not in shell.cwd.children:
+        dir_ops.mkdir(shell, "destino")
 
     for i in range(10):
-        filename = f"teste_{i}.txt"
+        nome = f"arquivo_{i}.txt"
+        destino = f"destino/{nome}"
 
-        # Medir criação
-        tempo_create = medir_tempo(file_ops.touch, shell, filename)
-        resultados['create'].append(tempo_create)
+        # 1. Criação
+        tempo = medir_tempo(file_ops.touch, shell, nome)
+        resultados['create'].append(tempo)
 
-        # Medir escrita
-        tempo_write = medir_tempo(file_ops.write, shell, f"{filename} \"{'x'*1000}\"")
-        resultados['write'].append(tempo_write)
+        # 2. Escrita
+        tempo = medir_tempo(file_ops.write, shell, f'{nome} "dados-{i*1000}"')
+        resultados['write'].append(tempo)
 
-        # Medir leitura
-        tempo_read = medir_tempo(file_ops.cat, shell, filename)
-        resultados['read'].append(tempo_read)
+        # 3. Move para /destino
+        tempo = medir_tempo(file_ops.mv, shell, f"{nome} {destino}")
+        resultados['mv'].append(tempo)
 
-        # Medir deleção
-        tempo_rm = medir_tempo(file_ops.rm, shell, filename)
-        resultados['delete'].append(tempo_rm)
+        # 4. Leitura (no destino)
+        tempo = medir_tempo(file_ops.cat, shell, f"{destino}")
+        resultados['read'].append(tempo)
 
-    # Mostrar gráfico
+        # 5. Deleção (no destino)
+        tempo = medir_tempo(file_ops.rm, shell, nome if nome in shell.cwd.children else destino.split("/")[-1])
+        resultados['delete'].append(tempo)
+
+    # Gráfico: tempo médio por operação
     labels = list(resultados.keys())
-    valores = [sum(resultados[chave])/len(resultados[chave]) for chave in labels]
+    tempos_medios = [sum(resultados[k]) / len(resultados[k]) for k in labels]
 
-    plt.bar(labels, valores, color=["blue", "green", "orange", "red"])
-    plt.title("Tempo médio por operação (em segundos)")
-    plt.ylabel("Tempo médio (s)")
+    plt.bar(labels, tempos_medios, color=['blue', 'green', 'orange', 'purple', 'red'])
+    plt.title("⏱️ Tempo médio por operação")
+    plt.ylabel("Tempo (segundos)")
     plt.savefig("benchmark.png")
-    print("📈 Benchmark final salvo como 'benchmark.png'")
+    print("📈 Benchmark completo salvo como 'benchmark.png'")
