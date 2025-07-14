@@ -1,49 +1,54 @@
 import time
 import matplotlib.pyplot as plt
-from filesystem.commands import file_ops
-from filesystem.commands import dir_ops
+from filesystem.commands import file_ops, dir_ops
 
 def medir_tempo(func, *args):
-    inicio = time.perf_counter()
-    func(*args)
-    fim = time.perf_counter()
-    return fim - inicio
+    try:
+        inicio = time.perf_counter()
+        func(*args)
+        fim = time.perf_counter()
+        return fim - inicio
+    except Exception as e:
+        print(f"Erro em {func.__name__}: {e}")
+        return None
 
 def benchmark(shell):
-    resultados = {
-        'create': [],
-        'write': [],
-        'mv': [],
-        'read': [],
-        'delete': []
-    }
+    resultados = {}
+
+    nome = "realista.txt"
+    conteudo = "x" * 1_000  # 1MB 1_000_000
+
+    resultados['create'] = medir_tempo(file_ops.touch, shell, nome)
+    resultados['write'] = medir_tempo(file_ops.write, shell, f'{nome} "{conteudo}"')
 
     if "destino" not in shell.cwd.children:
         dir_ops.mkdir(shell, "destino")
+    resultados['mv_superficial'] = medir_tempo(file_ops.mv, shell, f"{nome} destino/{nome}")
 
-    for i in range(10):
-        nome = f"arquivo_{i}.txt"
-        destino = f"destino/{nome}"
+    shell.do_cd("/")
+    caminho = []
+    for letra in "abcdefghij":
+        caminho.append(letra)
+        if letra not in shell.cwd.children:
+            dir_ops.mkdir(shell, letra)
+        shell.do_cd(letra)
 
-        tempo = medir_tempo(file_ops.touch, shell, nome)
-        resultados['create'].append(tempo)
+    caminho_profundo = "/".join(caminho)
+    resultados['mv_profundo'] = medir_tempo(file_ops.mv, shell, f"/destino/{nome} {caminho_profundo}/{nome}")
 
-        tempo = medir_tempo(file_ops.write, shell, f'{nome} "dados-{i*1000}"')
-
-        tempo = medir_tempo(file_ops.mv, shell, f"{nome} {destino}")
-        resultados['mv'].append(tempo)
-
-        tempo = medir_tempo(file_ops.cat, shell, f"{destino}")
-        resultados['read'].append(tempo)
-
-        tempo = medir_tempo(file_ops.rm, shell, nome if nome in shell.cwd.children else destino.split("/")[-1])
-        resultados['delete'].append(tempo)
+    resultados['read'] = medir_tempo(file_ops.cat, shell, f"{caminho_profundo}/{nome}")
 
     labels = list(resultados.keys())
-    tempos_medios = [sum(resultados[k]) / len(resultados[k]) for k in labels]
+    tempos = [resultados[k] for k in labels]
 
-    plt.bar(labels, tempos_medios, color=['blue', 'green', 'orange', 'purple', 'red'])
-    plt.title("⏱️ Tempo médio por operação")
+    plt.figure(figsize=(10, 5))
+    plt.bar(labels, tempos, color=['blue', 'green', 'orange', 'cyan', 'purple', 'red'])
+    plt.title("⏱️ Benchmark realista (usando i-nodes)")
     plt.ylabel("Tempo (segundos)")
-    plt.savefig("benchmark.png")
-    print("📈 Benchmark completo salvo como 'benchmark.png'")
+    plt.xticks(rotation=30)
+    plt.tight_layout()
+    plt.savefig("benchmark_realista.png")
+    print("📊 Benchmark realista salvo como 'benchmark_realista.png'")
+
+    for k, v in resultados.items():
+        print(f"{k:>15}: {v:.6f} segundos")
