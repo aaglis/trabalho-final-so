@@ -51,7 +51,13 @@ class FileSystemShell(cmd.Cmd):
     def do_stat(self, arg):
         file_ops.stat(self, arg.strip())
 
+    def do_metrics(self, arg):
+        from filesystem.metrics import gerar_metricas
+        gerar_metricas(self)
 
+    def do_benchmark(self, arg):
+        from filesystem.benchmark import benchmark
+        benchmark(self)
 
     def do_exit(self, arg):
         print("Saindo do sistema de arquivos.")
