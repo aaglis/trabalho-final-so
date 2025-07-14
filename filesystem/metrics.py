@@ -29,19 +29,16 @@ def gerar_metricas(shell):
 
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
-    # Gráfico 1: contagem por tipo
     axs[0].bar(['Arquivos', 'Diretórios', 'Symlinks'],
                [dados['arquivos'], dados['diretorios'], dados['symlinks']],
                color=['skyblue', 'lightgreen', 'orange'])
     axs[0].set_title("Contagem de Inodes por Tipo")
 
-    # Gráfico 2: distribuição de tamanhos
     axs[1].hist(dados['tamanhos_arquivos'], bins=10, color='blue', alpha=0.7)
     axs[1].set_title("Distribuição de Tamanhos de Arquivos")
     axs[1].set_xlabel("Tamanho (bytes)")
     axs[1].set_ylabel("Frequência")
 
-    # Gráfico 3: top N arquivos por tamanho
     top_n = sorted(zip(dados['nomes_arquivos'], dados['tamanhos_arquivos']),
                    key=lambda x: x[1], reverse=True)[:5]
     if top_n:

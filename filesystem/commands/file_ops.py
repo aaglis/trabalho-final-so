@@ -86,7 +86,6 @@ def mv(shell, args):
         print("Arquivo de origem não encontrado.")
         return
 
-    # Diretório onde está o arquivo de origem
     source_dir_path = os.path.dirname(source_path) or "."
     source_dir = resolve_path(shell, source_dir_path, follow_symlinks=True)
     source_name = os.path.basename(source_path)
@@ -95,7 +94,6 @@ def mv(shell, args):
         print("Arquivo de origem não encontrado no diretório pai.")
         return
 
-    # Verifica se destino é um diretório
     target_inode = resolve_path(shell, target_path, follow_symlinks=True)
     if target_inode and target_inode.is_directory:
         new_name = source_name
@@ -112,7 +110,6 @@ def mv(shell, args):
         print("Já existe um arquivo ou diretório com esse nome no destino.")
         return
 
-    # Mover: remove do diretório de origem, adiciona ao destino
     inode_to_move = source_dir.children.pop(source_name)
     target_dir.children[new_name] = inode_to_move
 

@@ -25,7 +25,6 @@ def ls(shell, show_inode=False):
 
 def cd(shell, name):
     if not name:
-        # cd sem argumento → vai para a raiz
         shell.cwd = shell.root
         shell.path = [shell.root]
         shell._update_prompt()
@@ -48,7 +47,6 @@ def cd(shell, name):
         print("Não é um diretório.")
         return
 
-    # Caminho absoluto → reconstruir a pilha de path
     if name.startswith("/"):
         components = name.split("/")[1:]
         shell.path = [shell.root]
@@ -64,7 +62,6 @@ def cd(shell, name):
                 shell.path.append(current)
         shell.cwd = shell.path[-1]
     else:
-        # Caminho relativo
         shell.cwd = inode
         shell.path.append(shell.cwd)
 
